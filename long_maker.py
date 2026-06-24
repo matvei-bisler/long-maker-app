@@ -8,6 +8,7 @@ long_maker — превращает учебный план .plx в long.csv.
 
 import csv
 import io
+import re
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
@@ -68,6 +69,32 @@ def extract_program_metadata(root):
         profiles = [{'id': direction['id'], 'name': direction['name']}]
 
     return direction, profiles
+
+
+def extract_admission_year(root):
+    """Год набора (начала подготовки) из учебного плана.
+
+    В .plx он лежит в атрибуте корневого «Документ» — встречаются разные
+    варианты названия, поэтому перебираем известные и берём 4 цифры года.
+    """
+    year_attrs = (
+        'ГодНачалаПодготовки',
+        'ГодНачала',
+        'УчебныйГод',
+        'ГодНабора',
+        'Год',
+    )
+    for elem in root.iter():
+        if clean_tag_name(elem.tag) != 'Документ':
+            continue
+        for name in year_attrs:
+            value = elem.attrib.get(name)
+            if not value:
+                continue
+            match = re.search(r'\d{4}', str(value))
+            if match:
+                return match.group(0)
+    return ''
 
 
 def extract_competencies(root):
@@ -272,6 +299,7 @@ def plx_to_long(plx_source, profile_index=0):
 
     references = build_references(root)
     direction, profiles = extract_program_metadata(root)
+    admission_year = extract_admission_year(root)
     comp_lookup = extract_competencies(root)
     disciplines_by_oop = extract_disciplines(root, references, comp_lookup, direction.get('id'))
 
@@ -284,6 +312,7 @@ def plx_to_long(plx_source, profile_index=0):
     rows = build_long_rows(disciplines)
 
     info = {
+        'admission_year': admission_year,
         'direction_code': direction.get('code', ''),
         'direction_name': direction.get('name', ''),
         'direction': f"{direction.get('code', '')} {direction.get('name', '')}".strip(),

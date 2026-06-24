@@ -64,7 +64,9 @@ st.dataframe(df, use_container_width=True, hide_index=True)
 
 # Скачивание
 csv_text = rows_to_csv(rows)
-default_name = (info["direction_code"] or "plan").replace(" ", "_")
+direction_part = (info["direction_code"] or "plan").replace(" ", "_")
+year_part = info.get("admission_year") or ""
+default_name = f"{year_part}_{direction_part}" if year_part else direction_part
 st.download_button(
     label="⬇️ Скачать long.csv",
     data=csv_text.encode("utf-8"),
