@@ -72,28 +72,15 @@ def extract_program_metadata(root):
 
 
 def extract_admission_year(root):
-    """Год набора (начала подготовки) из учебного плана.
-
-    В .plx он лежит в атрибуте корневого «Документ» — встречаются разные
-    варианты названия, поэтому перебираем известные и берём 4 цифры года.
-    """
-    year_attrs = (
-        'ГодНачалаПодготовки',
-        'ГодНачала',
-        'УчебныйГод',
-        'ГодНабора',
-        'Год',
-    )
+    """Год набора (начала подготовки) — атрибут «ГодНачалаПодготовки»
+    элемента «Планы» (как в эталонном пайплайне PLX → XML/JSON)."""
     for elem in root.iter():
-        if clean_tag_name(elem.tag) != 'Документ':
-            continue
-        for name in year_attrs:
-            value = elem.attrib.get(name)
-            if not value:
-                continue
-            match = re.search(r'\d{4}', str(value))
-            if match:
-                return match.group(0)
+        if clean_tag_name(elem.tag) == 'Планы':
+            value = elem.attrib.get('ГодНачалаПодготовки')
+            if value:
+                match = re.search(r'\d{4}', str(value))
+                return match.group(0) if match else str(value).strip()
+            break
     return ''
 
 
